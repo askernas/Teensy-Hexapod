@@ -1,13 +1,16 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include <math.h>
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 
 #include "vectors.h"
 #include "Helpers.h"
 #include "RC.h"
 #include "Initializations.h"
 
-
+Adafruit_PWMServoDriver pwm1 = Adafruit_PWMServoDriver(0x40);  // First board address
+Adafruit_PWMServoDriver pwm2 = Adafruit_PWMServoDriver(0x41);  // Second board address
 
 enum State {
   Initialize,
@@ -95,42 +98,36 @@ void setup() {
   pwm2.begin();
   pwm2.setPWMFreq(60);  // Set frequency to 60 Hz
   // end mod
-  
+
   attachServos(); 
   RC_Setup();
   stateInitialize();
 }
 
 void loop() {
-
   elapsedTime = millis() - loopStartTime;
   loopStartTime = millis();
 
   bool connected = GetData();
   //RC_DisplayData();
-  if(connected){
+  if (connected) {
+    double joy1x = map(rc_data.joy1_X, 0, 254, -100, 100);
+    double joy1y = map(rc_data.joy1_Y, 0, 254, -100, 100);
 
-    double joy1x = map(rc_data.joy1_X,0,254,-100,100);
-    double joy1y = map(rc_data.joy1_Y,0,254,-100,100);
+    double joy2x = map(rc_data.joy2_X, 0, 254, -100, 100);
+    double joy2y = map(rc_data.joy2_Y, 0, 254, -100, 100);
 
-    double joy2x = map(rc_data.joy2_X,0,254,-100,100);
-    double joy2y = map(rc_data.joy2_Y,0,254,-100,100);
-    
-    joy1TargetVector = Vector2(joy1x,joy1y);
-    joy1TargetMagnitude = constrain(calculateHypotenuse(abs(joy1x),abs(joy1y)),0,100);   
+    joy1TargetVector = Vector2(joy1x, joy1y);
+    joy1TargetMagnitude = constrain(calculateHypotenuse(abs(joy1x), abs(joy1y)), 0, 100);   
 
-    joy2TargetVector = Vector2(joy2x,joy2y);
-    joy2TargetMagnitude = constrain(calculateHypotenuse(abs(joy2x),abs(joy2y)),0,100);  
+    joy2TargetVector = Vector2(joy2x, joy2y);
+    joy2TargetMagnitude = constrain(calculateHypotenuse(abs(joy2x), abs(joy2y)), 0, 100);  
 
     previousDistanceFromGround = distanceFromGround;
     distanceFromGround = distanceFromGroundBase + rc_data.slider1 * -1.7;
     distanceFromCenter = 170;
-
-    
-
-    
   }
-  else{
+  else {
     calibrationState();
     //Serial.println("State: Disconnected");
     return;
@@ -143,18 +140,15 @@ void loop() {
   joy2CurrentMagnitude = lerp(joy2CurrentMagnitude, joy2TargetMagnitude, 0.12);  
 
   previousGait = currentGait;
-  if(rc_data.pushButton2 == 1  && rc_data_previous.pushButton2 == 0){
+  if (rc_data.pushButton2 == 1  && rc_data_previous.pushButton2 == 0) {
     currentGaitID += 1;
-    if(currentGaitID == totalGaits){
+    if (currentGaitID == totalGaits) {
       currentGaitID = 0;
     }    
-    
     currentGait = gaits[currentGaitID];
   }
 
-  
-  
-  if(rc_data.joy1_Button == 1 && attackCooldown == 0){
+  if (rc_data.joy1_Button == 1 && attackCooldown == 0) {
     Serial.println("slam attack");
     resetMovementVectors();
     slamAttack();
@@ -163,22 +157,107 @@ void loop() {
     loopStartTime = millis();
     return;
   }
-  
-  else{
+  else {
     attackCooldown = max(attackCooldown - elapsedTime, 0);
   }
 
-  if(abs(joy1CurrentMagnitude) >= 10 || abs(joy2CurrentMagnitude) >= 10){
+  if (abs(joy1CurrentMagnitude) >= 10 || abs(joy2CurrentMagnitude) >= 10) {
     carState();
     timeSinceLastInput = millis();
     return;
   }
 
-  if(abs(timeSinceLastInput - millis()) > 5) {
+  if (abs(timeSinceLastInput - millis()) > 5) {
     standingState();
     return;
-  }  
+  }
 }
+
+// Function to set the servo position
+void setServoPosition(Adafruit_PWMServoDriver &pwm, int channel, int angle) {
+  int pulse = map(angle, 0, 180, 150, 600);  // Map angle to PWM pulse length
+  pwm.setPWM(channel, 0, pulse);
+}
+
+
+// void loop() {
+
+//   elapsedTime = millis() - loopStartTime;
+//   loopStartTime = millis();
+
+//   bool connected = GetData();
+//   //RC_DisplayData();
+//   if(connected){
+
+//     double joy1x = map(rc_data.joy1_X,0,254,-100,100);
+//     double joy1y = map(rc_data.joy1_Y,0,254,-100,100);
+
+//     double joy2x = map(rc_data.joy2_X,0,254,-100,100);
+//     double joy2y = map(rc_data.joy2_Y,0,254,-100,100);
+    
+//     joy1TargetVector = Vector2(joy1x,joy1y);
+//     joy1TargetMagnitude = constrain(calculateHypotenuse(abs(joy1x),abs(joy1y)),0,100);   
+
+//     joy2TargetVector = Vector2(joy2x,joy2y);
+//     joy2TargetMagnitude = constrain(calculateHypotenuse(abs(joy2x),abs(joy2y)),0,100);  
+
+//     previousDistanceFromGround = distanceFromGround;
+//     distanceFromGround = distanceFromGroundBase + rc_data.slider1 * -1.7;
+//     distanceFromCenter = 170;
+
+    
+
+    
+//   }
+//   else{
+//     calibrationState();
+//     //Serial.println("State: Disconnected");
+//     return;
+//   }
+
+//   joy1CurrentVector = lerp(joy1CurrentVector, joy1TargetVector, 0.08);
+//   joy1CurrentMagnitude = lerp(joy1CurrentMagnitude, joy1TargetMagnitude, 0.08);
+
+//   joy2CurrentVector = lerp(joy2CurrentVector, joy2TargetVector, 0.12);
+//   joy2CurrentMagnitude = lerp(joy2CurrentMagnitude, joy2TargetMagnitude, 0.12);  
+
+//   previousGait = currentGait;
+//   if(rc_data.pushButton2 == 1  && rc_data_previous.pushButton2 == 0){
+//     currentGaitID += 1;
+//     if(currentGaitID == totalGaits){
+//       currentGaitID = 0;
+//     }    
+    
+//     currentGait = gaits[currentGaitID];
+//   }
+
+  
+  
+//   if(rc_data.joy1_Button == 1 && attackCooldown == 0){
+//     Serial.println("slam attack");
+//     resetMovementVectors();
+//     slamAttack();
+//     standingState();
+//     attackCooldown = 50;    
+//     loopStartTime = millis();
+//     return;
+//   }
+  
+//   else{
+//     attackCooldown = max(attackCooldown - elapsedTime, 0);
+//   }
+
+//   if(abs(joy1CurrentMagnitude) >= 10 || abs(joy2CurrentMagnitude) >= 10){
+//     carState();
+//     timeSinceLastInput = millis();
+//     return;
+//   }
+
+//   if(abs(timeSinceLastInput - millis()) > 5) {
+//     standingState();
+//     return;
+//   }  
+// }
 
 void resetMovementVectors(){
   joy1CurrentVector = Vector2(0,0);
