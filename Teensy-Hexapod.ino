@@ -109,7 +109,6 @@ void loop() {
   loopStartTime = millis();
 
   bool connected = GetData();
-  //RC_DisplayData();
   if (connected) {
     double joy1x = map(rc_data.joy1_X, 0, 254, -100, 100);
     double joy1y = map(rc_data.joy1_Y, 0, 254, -100, 100);
@@ -126,10 +125,8 @@ void loop() {
     previousDistanceFromGround = distanceFromGround;
     distanceFromGround = distanceFromGroundBase + rc_data.slider1 * -1.7;
     distanceFromCenter = 170;
-  }
-  else {
+  } else {
     calibrationState();
-    //Serial.println("State: Disconnected");
     return;
   }
 
@@ -156,8 +153,7 @@ void loop() {
     attackCooldown = 50;    
     loopStartTime = millis();
     return;
-  }
-  else {
+  } else {
     attackCooldown = max(attackCooldown - elapsedTime, 0);
   }
 
@@ -170,7 +166,7 @@ void loop() {
   if (abs(timeSinceLastInput - millis()) > 5) {
     standingState();
     return;
-  }
+  }  
 }
 
 // Function to set the servo position
