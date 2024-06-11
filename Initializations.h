@@ -1,64 +1,47 @@
-Servo coxa1;
-Servo femur1;
-Servo tibia1;
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 
-Servo coxa2;
-Servo femur2;
-Servo tibia2;
+// Create the PCA9685 instances
+Adafruit_PWMServoDriver pwm1 = Adafruit_PWMServoDriver(0x40);  // First board address
+Adafruit_PWMServoDriver pwm2 = Adafruit_PWMServoDriver(0x41);  // Second board address
 
-Servo coxa3;
-Servo femur3;
-Servo tibia3;
+// Servo PWM channels
+const int coxa1Channel = 0;
+const int femur1Channel = 1;
+const int tibia1Channel = 2;
 
-Servo coxa4;
-Servo femur4;
-Servo tibia4;
+const int coxa2Channel = 3;
+const int femur2Channel = 4;
+const int tibia2Channel = 5;
 
-Servo coxa5;
-Servo femur5;
-Servo tibia5;
+const int coxa3Channel = 6;
+const int femur3Channel = 7;
+const int tibia3Channel = 8;
 
-Servo coxa6;
-Servo femur6;
-Servo tibia6;
+const int coxa4Channel = 9;
+const int femur4Channel = 10;
+const int tibia4Channel = 11;
 
-const int coxa1Pin = 22;
-const int femur1Pin = 23;
-const int tibia1Pin = 24;
+const int coxa5Channel = 12;
+const int femur5Channel = 13;
+const int tibia5Channel = 14;
 
-const int coxa2Pin = 25;
-const int femur2Pin = 26;
-const int tibia2Pin = 27;
+const int coxa6Channel = 15;
+const int femur6Channel = 0;  // On the second board
+const int tibia6Channel = 1;  // On the second board
 
-const int coxa3Pin = 28;
-const int femur3Pin = 29;
-const int tibia3Pin = 30;
-
-const int coxa4Pin = 31;
-const int femur4Pin = 32;
-const int tibia4Pin = 33;
-
-const int coxa5Pin = 34;
-const int femur5Pin = 35;
-const int tibia5Pin = 36;
-
-const int coxa6Pin = 37;
-const int femur6Pin = 38;
-const int tibia6Pin = 39;
-
-const Vector3 offsets1 = {90,75,-18};
-const Vector3 offsets2 = {93,75,-15};
-const Vector3 offsets3 = {93,75,-18}; 
-const Vector3 offsets4 = {87,80,-26};
-const Vector3 offsets5 = {85,89,-16};
-const Vector3 offsets6 = {93,85,-24};
+const Vector3 offsets1 = {90, 75, -18};
+const Vector3 offsets2 = {93, 75, -15};
+const Vector3 offsets3 = {93, 75, -18};
+const Vector3 offsets4 = {87, 80, -26};
+const Vector3 offsets5 = {85, 89, -16};
+const Vector3 offsets6 = {93, 85, -24};
 const Vector3 offsets[6] = {offsets1, offsets2, offsets3, offsets4, offsets5, offsets6};
 
-
-const float a1 = 41;  //Coxa Length
-const float a2 = 116; //Femur Length
-const float a3 = 183; //Tibia Length   
-float legLength = a1+a2+a3;
+const float a1 = 41;  // Coxa Length
+const float a2 = 116; // Femur Length
+const float a3 = 183; // Tibia Length
+float legLength = a1 + a2 + a3;
 
 Vector3 currentPoints[6];
 Vector3 cycleStartPoints[6];
@@ -67,36 +50,125 @@ Vector3 currentRot(180, 0, 180);
 Vector3 targetRot(180, 0, 180);
 
 float strideMultiplier[6] = {1, 1, 1, -1, -1, -1};
-float rotationMultiplier[6] = {-1, 0, 1, -1, 0 , 1};
+float rotationMultiplier[6] = {-1, 0, 1, -1, 0, 1};
 
 Vector3 ControlPoints[10];
 Vector3 RotateControlPoints[10];
-
 Vector3 AttackControlPoints[10];
 
-
-void attachServos(){
-  coxa1.attach(coxa1Pin,500,2500);
-  femur1.attach(femur1Pin,500,2500);
-  tibia1.attach(tibia1Pin,500,2500); 
-
-  coxa2.attach(coxa2Pin,500,2500);
-  femur2.attach(femur2Pin,500,2500);
-  tibia2.attach(tibia2Pin,500,2500);  
-
-  coxa3.attach(coxa3Pin,500,2500);
-  femur3.attach(femur3Pin,500,2500);
-  tibia3.attach(tibia3Pin,500,2500);
-
-  coxa4.attach(coxa4Pin,500,2500);
-  femur4.attach(femur4Pin,500,2500);
-  tibia4.attach(tibia4Pin,500,2500);
-
-  coxa5.attach(coxa5Pin,500,2500);
-  femur5.attach(femur5Pin,500,2500);
-  tibia5.attach(tibia5Pin,500,2500);
-
-  coxa6.attach(coxa6Pin,500,2500);
-  femur6.attach(femur6Pin,500,2500);
-  tibia6.attach(tibia6Pin,500,2500);  
+void attachServos() {
+  Wire.begin();
+  pwm1.begin();
+  pwm1.setPWMFreq(60);  // Analog servos run at ~60 Hz
+  pwm2.begin();
+  pwm2.setPWMFreq(60);  // Analog servos run at ~60 Hz
 }
+
+// Function to set the servo position
+void setServoPosition(Adafruit_PWMServoDriver &pwm, int channel, int angle) {
+  int pulse = map(angle, 0, 180, 150, 600);  // Map angle to PWM pulse length
+  pwm.setPWM(channel, 0, pulse);
+}
+
+// Servo coxa1;
+// Servo femur1;
+// Servo tibia1;
+
+// Servo coxa2;
+// Servo femur2;
+// Servo tibia2;
+
+// Servo coxa3;
+// Servo femur3;
+// Servo tibia3;
+
+// Servo coxa4;
+// Servo femur4;
+// Servo tibia4;
+
+// Servo coxa5;
+// Servo femur5;
+// Servo tibia5;
+
+// Servo coxa6;
+// Servo femur6;
+// Servo tibia6;
+
+// const int coxa1Pin = 22;
+// const int femur1Pin = 23;
+// const int tibia1Pin = 24;
+
+// const int coxa2Pin = 25;
+// const int femur2Pin = 26;
+// const int tibia2Pin = 27;
+
+// const int coxa3Pin = 28;
+// const int femur3Pin = 29;
+// const int tibia3Pin = 30;
+
+// const int coxa4Pin = 31;
+// const int femur4Pin = 32;
+// const int tibia4Pin = 33;
+
+// const int coxa5Pin = 34;
+// const int femur5Pin = 35;
+// const int tibia5Pin = 36;
+
+// const int coxa6Pin = 37;
+// const int femur6Pin = 38;
+// const int tibia6Pin = 39;
+
+// const Vector3 offsets1 = {90,75,-18};
+// const Vector3 offsets2 = {93,75,-15};
+// const Vector3 offsets3 = {93,75,-18}; 
+// const Vector3 offsets4 = {87,80,-26};
+// const Vector3 offsets5 = {85,89,-16};
+// const Vector3 offsets6 = {93,85,-24};
+// const Vector3 offsets[6] = {offsets1, offsets2, offsets3, offsets4, offsets5, offsets6};
+
+
+// const float a1 = 41;  //Coxa Length
+// const float a2 = 116; //Femur Length
+// const float a3 = 183; //Tibia Length   
+// float legLength = a1+a2+a3;
+
+// Vector3 currentPoints[6];
+// Vector3 cycleStartPoints[6];
+
+// Vector3 currentRot(180, 0, 180);
+// Vector3 targetRot(180, 0, 180);
+
+// float strideMultiplier[6] = {1, 1, 1, -1, -1, -1};
+// float rotationMultiplier[6] = {-1, 0, 1, -1, 0 , 1};
+
+// Vector3 ControlPoints[10];
+// Vector3 RotateControlPoints[10];
+
+// Vector3 AttackControlPoints[10];
+
+
+// void attachServos(){
+//   coxa1.attach(coxa1Pin,500,2500);
+//   femur1.attach(femur1Pin,500,2500);
+//   tibia1.attach(tibia1Pin,500,2500); 
+
+//   coxa2.attach(coxa2Pin,500,2500);
+//   femur2.attach(femur2Pin,500,2500);
+//   tibia2.attach(tibia2Pin,500,2500);  
+
+//   coxa3.attach(coxa3Pin,500,2500);
+//   femur3.attach(femur3Pin,500,2500);
+//   tibia3.attach(tibia3Pin,500,2500);
+
+//   coxa4.attach(coxa4Pin,500,2500);
+//   femur4.attach(femur4Pin,500,2500);
+//   tibia4.attach(tibia4Pin,500,2500);
+
+//   coxa5.attach(coxa5Pin,500,2500);
+//   femur5.attach(femur5Pin,500,2500);
+//   tibia5.attach(tibia5Pin,500,2500);
+
+//   coxa6.attach(coxa6Pin,500,2500);
+//   femur6.attach(femur6Pin,500,2500);
+//   tibia6.attach(tibia6Pin,500,2500);  
+// }

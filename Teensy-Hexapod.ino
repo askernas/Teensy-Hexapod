@@ -87,6 +87,15 @@ long loopStartTime = 0;
 void setup() {
   // Initialize serial communication
   Serial.begin(9600);
+  
+  // Initialize PCA9685 boards
+  Wire.begin();  // Initialize I2C communication
+  pwm1.begin();
+  pwm1.setPWMFreq(60);  // Set frequency to 60 Hz
+  pwm2.begin();
+  pwm2.setPWMFreq(60);  // Set frequency to 60 Hz
+  // end mod
+  
   attachServos(); 
   RC_Setup();
   stateInitialize();
